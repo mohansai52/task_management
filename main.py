@@ -38,26 +38,23 @@ class Task(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 def force_upgrade_db():
-    # FIRST: Create tables using SQLAlchemy (this creates 'user' table if missing)
-    with app.app_context():
-        db.create_all()
-        print("Tables created by SQLAlchemy")
-
-    # NOW: Add missing columns using raw sqlite3
-    conn = sqlite3.connect('tasks.db')
+    conn = sqlite3.connect("tasks.db")  # not Task_data.db
     cursor = conn.cursor()
-    cursor.execute("PRAGMA table_info(user)")
-    columns = [row[1] for row in cursor.fetchall()]
 
-    if 'email' not in columns:
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='user';")
+    if cursor.fetchone() is None:
+        print("User table not found, skipping ALTER TABLE.")
+        conn.close()
+        return
+
+    try:
         cursor.execute("ALTER TABLE user ADD COLUMN email TEXT")
-        print("Added email column")
-    if 'name' not in columns:
-        cursor.execute("ALTER TABLE user ADD COLUMN name TEXT")
-        print("Added name column")
+        conn.commit()
+    except sqlite3.OperationalError as e:
+        print("Skipping column addition:", e)
+    finally:
+        conn.close()
 
-    conn.commit()
-    conn.close()
 def register():
     if request.method == 'POST':
         username = request.form['username']
@@ -150,6 +147,8 @@ def complete(id):
     task.status = 'Completed' if task.completed else 'Pending'
     db.session.commit()
     return redirect('/')
+with app.app_context():
+    db.create_all()
 force_upgrade_db()
 if __name__ == "__main__":
     with app.app_context():
