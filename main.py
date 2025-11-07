@@ -36,7 +36,19 @@ class Task(db.Model):
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
-
+def force_upgrade_db():
+    conn = sqlite3.connect('tasks.db')
+    cursor = conn.cursor()
+    cursor.execute("PRAGMA table_info(user)")
+    columns = [row[1] for row in cursor.fetchall()]
+    if 'email' not in columns:
+        cursor.execute("ALTER TABLE user ADD COLUMN email TEXT")
+    if 'name' not in columns:
+        cursor.execute("ALTER TABLE user ADD COLUMN name TEXT")
+    conn.commit()
+    conn.close()
+    with app.app_context():
+        db.create_all()
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -130,7 +142,7 @@ def complete(id):
     task.status = 'Completed' if task.completed else 'Pending'
     db.session.commit()
     return redirect('/')
-
+force_upgrade_db()
 if __name__ == "__main__":
     with app.app_context():
         import sqlalchemy
