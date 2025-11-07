@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #0f172a; color: #e2e8f0; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1 { text-align: center; color: #60a5fa; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .user-info a { color: #a78bfa; font-weight: 600; }
+        .flash { padding: 12px; margin: 10px 0; border-radius: 8px; text-align: center; }
+        .success { background: #065f46; color: #6ee7b7; }
+        .danger { background: #7f1d1d; color: #fca5a5; }
+        .info { background: #1e3a8a; color: #93c5fd; }
+        form { display: grid; gap: 12px; margin: 25px 0; }
+        input, textarea { padding: 14px; background: #334155; border: none; border-radius: 8px; color: white; }
+        button { padding: 14px; background: #60a5fa; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        ul { list-style: none; padding: 0; }
+        li { background: #334155; margin: 15px 0; padding: 18px; border-radius: 12px; display: flex; gap: 15px; align-items: flex-start; }
+        .task-main { flex: 1; }
+        .task-title { font-weight: 600; font-size: 1.2em; }
+        .meta { font-size: 0.9em; color: #94a3b8; margin: 4px 0; }
+        .status { padding: 4px 10px; border-radius: 6px; font-size: 0.8em; font-weight: bold; }
+        .actions a { padding: 8px 14px; margin-right: 8px; border-radius: 6px; text-decoration: none; font-size: 0.9em; }
+        .edit { background: #f59e0b; color: white; }
+        .delete { background: #ef4444; color: white; }
+	.user-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1em;
+}
+.user-actions span {
+    color: #e2e8f0;
+}
+.btn-profile, .btn-logout {
+    padding: 10px 20px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95em;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+.btn-profile {
+    background: #6d28d9;
+    color: white;
+    border-color: #7c3aed;
+}
+.btn-profile:hover {
+    background: #7c3aed;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(109, 40, 217, 0.4);
+}
+.btn-logout {
+    background: #dc2626;
+    color: white;
+    border-color: #ef4444;
+}
+.btn-logout:hover {
+    background: #ef4444;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+ 
+            <div class="user-info">
+                <span><h2>Welcome, <strong>{{ current_user.name }}</strong></h2> </span><br>| 
+                <a href="/profile" class="btn-profile">Profile</a> | 
+                <a href="/logout" class="btn-logout" onclick="return confirm('Logout now?')">Logout</a>
+            </div>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST">
+            <input type="text" name="content" placeholder="Task title..." required>
+            <textarea name="description" placeholder="Description (optional)" rows="2"></textarea>
+            <input type="datetime-local" name="deadline">
+            <button type="submit">Add Task</button>
+        </form>
+
+        {% if tasks|length == 0 %}
+            <p style="text-align:center; color:#94a3b8; font-style:italic; margin-top:50px;">No tasks yet. Create one!</p>
+        {% else %}
+            <ul>
+                {% for task in tasks %}
+                    <li>
+                        <input type="checkbox" onchange="window.location.href='{{ url_for('complete', id=task.id) }}'" 
+                               {{ 'checked' if task.completed else '' }}>
+                        <div class="task-main">
+                            <div class="task-title">{{ task.content }}</div>
+                            {% if task.description %}
+                                <div class="meta">{{ task.description }}</div>
+                            {% endif %}
+                            {% if task.deadline %}
+                                <div class="meta">Deadline: {{ task.deadline.replace('T', ' ') }}</div>
+                            {% endif %}
+                            <span class="status" style="background: #{{ '10b981' if task.status == 'Completed' else 'f59e0b' }};">
+                                {{ task.status }}
+                            </span>
+                        </div>
+                        <div class="actions">
+                            <a href="{{ url_for('update', id=task.id) }}" class="edit">Edit</a>
+                            <a href="{{ url_for('delete', id=task.id) }}" class="delete" 
+                               onclick="return confirm('Delete forever?')">Delete</a>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </div>
+</body>
+</html>

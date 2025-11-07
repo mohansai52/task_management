@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html><head><title>Profile</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<style>body{background:#0f172a;color:#e2e8f0;font-family:Inter;padding:40px}</style>
+</head><body>
+<div class="container">
+    <h1>Your Profile</h1>
+    <div style="background:#1e293b;padding:30px;border-radius:16px;">
+        <p><strong>Name:</strong> {{ user.name }}</p>
+        <p><strong>Username:</strong> {{ user.username }}</p>
+        <p><strong>Email:</strong> {{ user.email }}</p>
+        <p><strong>Member since:</strong> {{ user.date_created.strftime('%B %d, %Y') }}</p>
+        <p><strong>Total tasks:</strong> {{ tasks|length }}</p>
+    </div>
+    <br>
+    <a href="/" style="color:#60a5fa">Back to Tasks</a> | 
+    <a href="/logout" style="color:#f87171">Logout</a>
+</div>
+</body></html>
