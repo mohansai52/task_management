@@ -54,7 +54,7 @@ def force_upgrade_db():
         print("Skipping column addition:", e)
     finally:
         conn.close()
-
+@app.route('/register', methods=['GET','POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
