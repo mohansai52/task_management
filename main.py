@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_bcrypt import Bcrypt
 from datetime import datetime
+import sqlalchemy
+from sqlalchemy import text
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-super-secret-key-2025'
@@ -131,5 +133,21 @@ def complete(id):
 
 if __name__ == "__main__":
     with app.app_context():
-        db.create_all()
+        import sqlalchemy
+        engine = sqlalchemy.create_engine('sqlite:///tasks.db')
+        if not sqlalchemy.inspect(engine).has_table('user'):
+            db.create_all()
+        else:
+            # Force add missing columns (email, name)
+            with engine.connect() as conn:
+                try:
+                    conn.execute(sqlalchemy.text("ALTER TABLE user ADD COLUMN email TEXT"))
+                except:
+                    pass
+                try:
+                    conn.execute(sqlalchemy.text("ALTER TABLE user ADD COLUMN name TEXT"))
+                except:
+                    pass
+                conn.commit()
+        db.create_all()  # Safe to run again
     app.run(debug=True)
