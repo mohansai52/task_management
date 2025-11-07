@@ -38,19 +38,26 @@ class Task(db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 def force_upgrade_db():
+    # FIRST: Create tables using SQLAlchemy (this creates 'user' table if missing)
+    with app.app_context():
+        db.create_all()
+        print("Tables created by SQLAlchemy")
+
+    # NOW: Add missing columns using raw sqlite3
     conn = sqlite3.connect('tasks.db')
     cursor = conn.cursor()
     cursor.execute("PRAGMA table_info(user)")
     columns = [row[1] for row in cursor.fetchall()]
+
     if 'email' not in columns:
         cursor.execute("ALTER TABLE user ADD COLUMN email TEXT")
+        print("Added email column")
     if 'name' not in columns:
         cursor.execute("ALTER TABLE user ADD COLUMN name TEXT")
+        print("Added name column")
+
     conn.commit()
     conn.close()
-    with app.app_context():
-        db.create_all()
-@app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
