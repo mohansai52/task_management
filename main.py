@@ -5,6 +5,7 @@ from flask_bcrypt import Bcrypt
 from datetime import datetime
 import sqlalchemy
 from sqlalchemy import text
+import sqlite3
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-super-secret-key-2025'
