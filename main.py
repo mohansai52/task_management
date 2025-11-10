@@ -11,40 +11,47 @@ app = Flask(__name__)
 from flask import send_file
 import os
 
-@app.route('/get-db')
-def get_db():
-    # Render free tier persistent disk path
-    DB_PATH = "/opt/render/project/src/tasks.db"
+@app.route('/download-real-db')
+def download_real_db():
+    # THIS IS WHERE RENDER ACTUALLY STORES YOUR DB ON FREE TIER
+    REAL_PATH = "/opt/render/project/src/instance/tasks.db"
     
-    if os.path.exists(DB_PATH):
+    if os.path.exists(REAL_PATH):
         return send_file(
-            DB_PATH,
+            REAL_PATH,
             as_attachment=True,
-            download_name="MY_REAL_TASK_MANAGER_DATA.db",
+            download_name="TASK_MANAGER_FULL_DATA_WITH_USERS.db",
             mimetype="application/x-sqlite3"
         )
     
-    # If not found, show debug info WITHOUT f-string backslash
-    files = os.listdir("/opt/render/project/src")
-    file_list = "<br>".join(files)
+    # If not there, show proof
+    instance_files = os.listdir("/opt/render/project/src/instance") if os.path.exists("/opt/render/project/src/instance") else []
+    root_files = os.listdir("/opt/render/project/src")
+    
     return f"""
-    <h2>Database not found at /opt/render/project/src/tasks.db</h2>
-    <p>Files in project root:</p>
-    <pre>{file_list}</pre>
-    <p>Current working directory: {os.getcwd()}</p>
-    <p>Try checking Render Dashboard → Files tab</p>
+    <h1>Database Location Found!</h1>
+    <p>Root files: {root_files}</p>
+    <p>Instance folder files: {instance_files}</p>
+    <p>Expected path: /opt/render/project/src/instance/tasks.db</p>
+    <p>If you see 'tasks.db' above → refresh this page</p>
+    <hr>
+    <h2>TRY THESE LINKS:</h2>
+    <ul>
+        <li><a href="/download-real-db">CLICK HERE TO DOWNLOAD REAL DB</a></li>
+        <li><a href="https://dashboard.render.com" target="_blank">Open Render Dashboard → Files tab → Download manually</a></li>
+    </ul>
     """
 
-@app.route('/files')
-def files():
-    files = os.listdir("/opt/render/project/src")
-    html = "<h2>Files on Render:</h2><ul>"
-    for f in files:
-        html += f"<li>{f}</li>"
-    html += "</ul>"
-    if "tasks.db" in files:
-        html += '<a href="/get-db"><h1>CLICK HERE TO DOWNLOAD tasks.db (REAL DATA)</h1></a>'
-    return html
+# Optional: Add this to see exactly what's there
+@app.route('/debug')
+def debug():
+    return f"""
+    <pre>
+CWD: {os.getcwd()}
+Root: {os.listdir('/opt/render/project/src')}
+Instance: {os.listdir('/opt/render/project/src/instance') if os.path.exists('/opt/render/project/src/instance') else 'NOT FOUND'}
+    </pre>
+    """
     
 app.config['SECRET_KEY'] = 'your-super-secret-key-2025'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tasks.db'
