@@ -8,6 +8,24 @@ from sqlalchemy import text
 import sqlite3
 
 app = Flask(__name__)
+from flask import send_file, abort
+import os
+
+# TEMPORARY ROUTE — DELETE AFTER DOWNLOAD
+@app.route('/get-db')
+def get_db():
+    # Remove all checks — just give the file
+    db_path = 'instance/tasks.db'  # Change if your DB is in instance/ folder
+    
+    if not os.path.exists(db_path):
+        return "tasks.db not found! Check path.", 404
+        
+    return send_file(
+        db_path,
+        as_attachment=True,
+        download_name='MY_FULL_USER_DATA.db',
+        mimetype='application/x-sqlite3'
+    )
 app.config['SECRET_KEY'] = 'your-super-secret-key-2025'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tasks.db'
 db = SQLAlchemy(app)
@@ -57,15 +75,7 @@ def force_upgrade_db():
 from flask import send_file, abort
 import os
 
-@app.route('/download-db')
-def download_db():
-    if not current_user.is_authenticated or current_user.id != 1:  # Change 1 to your user ID
-        abort(403)
-    db_path = 'tasks.db'  # or instance/tasks.db if you used instance folder
-    if os.path.exists(db_path):
-        return send_file(db_path, as_attachment=True, download_name='my_task_manager_data.db')
-    else:
-        return "Database file not found!", 404
+
 @app.route('/register', methods=['GET','POST'])
 def register():
     if request.method == 'POST':
