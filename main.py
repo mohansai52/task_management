@@ -14,18 +14,17 @@ import os
 # TEMPORARY ROUTE — DELETE AFTER DOWNLOAD
 @app.route('/get-db')
 def get_db():
-    # Remove all checks — just give the file
-    db_path = 'instance/tasks.db'  # Change if your DB is in instance/ folder
+    import sqlite3
+    from pathlib import Path
     
-    if not os.path.exists(db_path):
-        return "tasks.db not found! Check path.", 404
-        
-    return send_file(
-        db_path,
-        as_attachment=True,
-        download_name='MY_FULL_USER_DATA.db',
-        mimetype='application/x-sqlite3'
-    )
+    # Try common paths
+    possible_paths = ['tasks.db', 'instance/tasks.db', 'data/tasks.db', 'db/tasks.db']
+    
+    for path in possible_paths:
+        if Path(path).exists():
+            return send_file(path, as_attachment=True, download_name='USER_DATA.db')
+    
+    return "Database file not found in any common location. Check Render Files tab.", 404
 app.config['SECRET_KEY'] = 'your-super-secret-key-2025'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tasks.db'
 db = SQLAlchemy(app)
