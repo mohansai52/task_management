@@ -54,6 +54,18 @@ def force_upgrade_db():
         print("Skipping column addition:", e)
     finally:
         conn.close()
+from flask import send_file, abort
+import os
+
+@app.route('/download-db')
+def download_db():
+    if not current_user.is_authenticated or current_user.id != 1:  # Change 1 to your user ID
+        abort(403)
+    db_path = 'tasks.db'  # or instance/tasks.db if you used instance folder
+    if os.path.exists(db_path):
+        return send_file(db_path, as_attachment=True, download_name='my_task_manager_data.db')
+    else:
+        return "Database file not found!", 404
 @app.route('/register', methods=['GET','POST'])
 def register():
     if request.method == 'POST':
