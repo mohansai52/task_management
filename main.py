@@ -12,19 +12,44 @@ from flask import send_file, abort
 import os
 
 # TEMPORARY ROUTE — DELETE AFTER DOWNLOAD
+from flask import send_file
+import os
+
 @app.route('/get-db')
 def get_db():
-    import sqlite3
-    from pathlib import Path
+    # Render free tier persistent disk path
+    DB_PATH = '/opt/render/project/src/tasks.db'
     
-    # Try common paths
-    possible_paths = ['tasks.db', 'instance/tasks.db', 'data/tasks.db', 'db/tasks.db']
+    # Fallback paths
+    fallback_paths = [
+        '/opt/render/project/src/tasks.db',
+        '/opt/render/project/src/instance/tasks.db',
+        'tasks.db',
+        'instance/tasks.db'
+    ]
     
-    for path in possible_paths:
-        if Path(path).exists():
-            return send_file(path, as_attachment=True, download_name='USER_DATA.db')
+    for path in fallback_paths:
+        if os.path.exists(path):
+            return send_file(
+                path,
+                as_attachment=True,
+                download_name='REAL_USER_DATA_WITH_TASKS.db',
+                mimetype='application/x-sqlite3'
+            )
     
-    return "Database file not found in any common location. Check Render Files tab.", 404
+    # Debug: show what Render sees
+    return f"""
+    <h2>Database not found! Render sees:</h2>
+    <pre>{os.listdir('/opt/render/project/src')}</pre>
+    <p>Current working dir: {os.getcwd()}</p>
+    <p>All env: {dict(os.environ)}</p>
+    <a href='/list-files'>Click here to see all files</a>
+    """
+@app.route('/list-files')
+def list_files():
+    files = os.listdir('/opt/render/project/src')
+    return f"<pre>{'\n'.join(files)}</pre><br>Full path: /opt/render/project/src"
+    
 app.config['SECRET_KEY'] = 'your-super-secret-key-2025'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tasks.db'
 db = SQLAlchemy(app)
