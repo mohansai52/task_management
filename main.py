@@ -8,47 +8,43 @@ from sqlalchemy import text
 import sqlite3
 
 app = Flask(__name__)
-from flask import send_file, abort
-import os
-
-# TEMPORARY ROUTE — DELETE AFTER DOWNLOAD
 from flask import send_file
 import os
 
 @app.route('/get-db')
 def get_db():
     # Render free tier persistent disk path
-    DB_PATH = '/opt/render/project/src/tasks.db'
+    DB_PATH = "/opt/render/project/src/tasks.db"
     
-    # Fallback paths
-    fallback_paths = [
-        '/opt/render/project/src/tasks.db',
-        '/opt/render/project/src/instance/tasks.db',
-        'tasks.db',
-        'instance/tasks.db'
-    ]
+    if os.path.exists(DB_PATH):
+        return send_file(
+            DB_PATH,
+            as_attachment=True,
+            download_name="MY_REAL_TASK_MANAGER_DATA.db",
+            mimetype="application/x-sqlite3"
+        )
     
-    for path in fallback_paths:
-        if os.path.exists(path):
-            return send_file(
-                path,
-                as_attachment=True,
-                download_name='REAL_USER_DATA_WITH_TASKS.db',
-                mimetype='application/x-sqlite3'
-            )
-    
-    # Debug: show what Render sees
+    # If not found, show debug info WITHOUT f-string backslash
+    files = os.listdir("/opt/render/project/src")
+    file_list = "<br>".join(files)
     return f"""
-    <h2>Database not found! Render sees:</h2>
-    <pre>{os.listdir('/opt/render/project/src')}</pre>
-    <p>Current working dir: {os.getcwd()}</p>
-    <p>All env: {dict(os.environ)}</p>
-    <a href='/list-files'>Click here to see all files</a>
+    <h2>Database not found at /opt/render/project/src/tasks.db</h2>
+    <p>Files in project root:</p>
+    <pre>{file_list}</pre>
+    <p>Current working directory: {os.getcwd()}</p>
+    <p>Try checking Render Dashboard → Files tab</p>
     """
-@app.route('/list-files')
-def list_files():
-    files = os.listdir('/opt/render/project/src')
-    return f"<pre>{'\n'.join(files)}</pre><br>Full path: /opt/render/project/src"
+
+@app.route('/files')
+def files():
+    files = os.listdir("/opt/render/project/src")
+    html = "<h2>Files on Render:</h2><ul>"
+    for f in files:
+        html += f"<li>{f}</li>"
+    html += "</ul>"
+    if "tasks.db" in files:
+        html += '<a href="/get-db"><h1>CLICK HERE TO DOWNLOAD tasks.db (REAL DATA)</h1></a>'
+    return html
     
 app.config['SECRET_KEY'] = 'your-super-secret-key-2025'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tasks.db'
